@@ -1,24 +1,45 @@
-# Lumen PHP Framework
+# Тестовая задача для работодателя
 
-[![Build Status](https://travis-ci.org/laravel/lumen-framework.svg)](https://travis-ci.org/laravel/lumen-framework)
-[![Total Downloads](https://img.shields.io/packagist/dt/laravel/framework)](https://packagist.org/packages/laravel/lumen-framework)
-[![Latest Stable Version](https://img.shields.io/packagist/v/laravel/framework)](https://packagist.org/packages/laravel/lumen-framework)
-[![License](https://img.shields.io/packagist/l/laravel/framework)](https://packagist.org/packages/laravel/lumen-framework)
 
-Laravel Lumen is a stunningly fast PHP micro-framework for building web applications with expressive, elegant syntax. We believe development must be an enjoyable, creative experience to be truly fulfilling. Lumen attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as routing, database abstraction, queueing, and caching.
+## Описание задачи 
 
-## Official Documentation
+Шифрование карточных данных, получение криптограммы
+POST /api/token
 
-Documentation for the framework can be found on the [Lumen website](https://lumen.laravel.com/docs).
+Пример входных данных: JSON, данные карты
+{
+	"pan":"1234123412341234",
+	"cvc":"123",
+	"cardholder":"Card Holder",
+	"expire":"10/22"
+}
 
-## Contributing
+Предусмотреть валидацию входных данных (опционально):
 
-Thank you for considering contributing to Lumen! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+pan - 16 цифр, проверяет по алгоритму Луна (https://en.wikipedia.org/wiki/Luhn_algorithm)
+cvc - строго 3 цифры
+cardholder - строка
+expire - дата действия карты в формате месяц (две цифры) / год (последние 2 цифры)
 
-## Security Vulnerabilities
+В случае ошибки - запись в лог, ответ в JSON какая ошибка, соответствующий по смыслу http код
 
-If you discover a security vulnerability within Lumen, please send an e-mail to Taylor Otwell at taylor@laravel.com. All security vulnerabilities will be promptly addressed.
+После валидации входных данных,  к ним добавляется поле tokenExpire в котором в формате timestamp установлена дата, когда токен считаем невалидным.
+Вычисляется как now() + tokenTTL, где tokenTTL читается из конфига сервиса.
 
-## License
+Затем данные (пересобранная JSON строка с датой до которой токен валиден) — шифруются с помощью RSA (ключ читается из файловой системы. Сгенерировать пару приватный+публичный ключи)
 
-The Lumen framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Результат кодируется в base64 и логируется (только результат, исходный запрос с данными карты не сохраняется)
+
+Сервис отдает ответ в формате JSON:
+{
+	"pan":"1234**1234", // маскированный номер карты: первые 4 и последние 4 цифры
+	"token":"eyJhYWEiOiJiYnN…….mZsa2RmanZiIn0="
+}
+
+
+## Запуск проекта
+
+git clone 
+composer u
+
+Тестирование через postman
